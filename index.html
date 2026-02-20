@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EUR/HUF árfolyam grafikon</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Euro / Forint árfolyam</h1>
+      <p class="subtitle">Automatikus frissítés a Frankfurter API alapján.</p>
+
+      <section class="stats" aria-live="polite">
+        <div>
+          <span class="label">Legutóbbi árfolyam</span>
+          <strong id="latest-rate">–</strong>
+        </div>
+        <div>
+          <span class="label">Utolsó frissítés</span>
+          <strong id="last-updated">–</strong>
+        </div>
+      </section>
+
+      <p id="status" class="status">Adatok betöltése…</p>
+
+      <div class="chart-wrapper">
+        <canvas id="eurHufChart" aria-label="EUR/HUF árfolyam grafikon" role="img"></canvas>
+      </div>
+
+      <button id="refresh-btn" type="button">Frissítés most</button>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
