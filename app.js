@@ -1,10 +1,20 @@
-const DAYS_TO_LOAD = 30;
 const AUTO_REFRESH_MS = 60 * 60 * 1000;
+
+const INTERVALS = {
+  '1d': { label: '1 nap', days: 1 },
+  '5d': { label: '5 nap', days: 5 },
+  '1m': { label: '1 hónap', days: 30 },
+  '6m': { label: '6 hónap', days: 182 },
+  '1y': { label: '1 év', days: 365 },
+  '5y': { label: '5 év', days: 365 * 5 },
+  max: { label: 'Max', start: '1999-01-04' },
+};
 
 const statusEl = document.getElementById('status');
 const latestRateEl = document.getElementById('latest-rate');
 const lastUpdatedEl = document.getElementById('last-updated');
 const refreshBtn = document.getElementById('refresh-btn');
+const intervalSelectEl = document.getElementById('interval-select');
 const chartCanvas = document.getElementById('eurHufChart');
 
 let chart;
@@ -13,15 +23,26 @@ function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
-function getDateRange(days) {
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(end.getDate() - days);
-  return { start: formatDate(start), end: formatDate(end) };
+function getDateRange(intervalKey) {
+  const interval = INTERVALS[intervalKey] || INTERVALS['1m'];
+  const endDate = new Date();
+
+  if (interval.start) {
+    return { start: interval.start, end: formatDate(endDate), label: interval.label };
+  }
+
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - interval.days);
+
+  return {
+    start: formatDate(startDate),
+    end: formatDate(endDate),
+    label: interval.label,
+  };
 }
 
-async function fetchEurHufRates() {
-  const { start, end } = getDateRange(DAYS_TO_LOAD);
+async function fetchEurHufRates(intervalKey) {
+  const { start, end } = getDateRange(intervalKey);
   const url = `https://api.frankfurter.app/${start}..${end}?from=EUR&to=HUF`;
 
   const response = await fetch(url);
@@ -40,7 +61,7 @@ async function fetchEurHufRates() {
   return { labels, values };
 }
 
-function renderChart(labels, values) {
+function renderChart(labels, values, intervalLabel) {
   if (chart) {
     chart.destroy();
   }
@@ -51,7 +72,7 @@ function renderChart(labels, values) {
       labels,
       datasets: [
         {
-          label: '1 EUR értéke HUF-ban',
+          label: `1 EUR értéke HUF-ban (${intervalLabel})`,
           data: values,
           borderColor: '#1d4ed8',
           backgroundColor: 'rgba(29, 78, 216, 0.2)',
@@ -82,28 +103,34 @@ function renderChart(labels, values) {
 }
 
 async function updateRates() {
-  statusEl.textContent = 'Frissítés folyamatban…';
+  const intervalKey = intervalSelectEl.value;
+  const { label } = getDateRange(intervalKey);
+
+  statusEl.textContent = `Frissítés folyamatban (${label})…`;
   refreshBtn.disabled = true;
+  intervalSelectEl.disabled = true;
 
   try {
-    const { labels, values } = await fetchEurHufRates();
-    renderChart(labels, values);
+    const { labels, values } = await fetchEurHufRates(intervalKey);
+    renderChart(labels, values, label);
 
     const latestRate = values[values.length - 1];
     const latestDate = labels[labels.length - 1];
 
     latestRateEl.textContent = `${latestRate.toFixed(2)} HUF`;
     lastUpdatedEl.textContent = `${latestDate} (${new Date().toLocaleTimeString('hu-HU')})`;
-    statusEl.textContent = 'Sikeres frissítés.';
+    statusEl.textContent = `Sikeres frissítés (${label}).`;
   } catch (error) {
     console.error(error);
     statusEl.textContent = `Hiba történt: ${error.message}`;
   } finally {
     refreshBtn.disabled = false;
+    intervalSelectEl.disabled = false;
   }
 }
 
 refreshBtn.addEventListener('click', updateRates);
+intervalSelectEl.addEventListener('change', updateRates);
 
 updateRates();
 setInterval(updateRates, AUTO_REFRESH_MS);
