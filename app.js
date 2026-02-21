@@ -8,7 +8,12 @@ const INTERVALS = {
   '6m': { label: '6 hónap', days: 182 },
   '1y': { label: '1 év', days: 365 },
   '5y': { label: '5 év', days: 365 * 5 },
-  max: { label: 'Max', start: '1999-01-04' },
+  max: { label: 'Max', start: '2010-01-01' },
+};
+
+const CRYPTO_SYMBOLS = {
+  bitcoin: 'BTCUSDT',
+  ethereum: 'ETHUSDT',
 };
 
 const statusEl = document.getElementById('status');
@@ -86,26 +91,82 @@ async function fetchRates(base, intervalKey) {
   return { labels, values };
 }
 
-async function fetchCryptoUsd(coinId, intervalKey) {
-  const { days } = getDateRange(intervalKey);
-  const daysParam = days === 'max' ? 'max' : Math.max(1, Math.round(days));
-  const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${daysParam}&interval=daily`;
+async function fetchCryptoUsdFromBinance(coinId, intervalKey) {
+  const symbol = CRYPTO_SYMBOLS[coinId];
+  const { start, end } = getDateRange(intervalKey);
+  const startMs = new Date(`${start}T00:00:00Z`).getTime();
+  const endMs = new Date(`${end}T23:59:59Z`).getTime();
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP hiba (${coinId}): ${response.status}`);
+  let cursor = startMs;
+  const rows = [];
+
+  while (cursor < endMs) {
+    const url = new URL('https://api.binance.com/api/v3/klines');
+    url.searchParams.set('symbol', symbol);
+    url.searchParams.set('interval', '1d');
+    url.searchParams.set('startTime', String(cursor));
+    url.searchParams.set('endTime', String(endMs));
+    url.searchParams.set('limit', '1000');
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`HTTP hiba (${coinId}/Binance): ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!Array.isArray(data) || !data.length) {
+      break;
+    }
+
+    rows.push(...data);
+    const lastOpenTime = Number(data[data.length - 1][0]);
+    cursor = lastOpenTime + 24 * 60 * 60 * 1000;
+
+    if (data.length < 1000) {
+      break;
+    }
   }
 
-  const data = await response.json();
-  const prices = data.prices || [];
-  const labels = prices.map((row) => new Date(row[0]).toISOString().slice(0, 10));
-  const values = prices.map((row) => row[1]);
+  const labels = rows.map((row) => new Date(Number(row[0])).toISOString().slice(0, 10));
+  const values = rows.map((row) => Number(row[4]));
 
   if (!labels.length) {
-    throw new Error(`Nem érkezett ${coinId}/USD árfolyam adat.`);
+    throw new Error(`Nem érkezett ${coinId}/USD árfolyam adat (Binance).`);
   }
 
   return { labels, values };
+}
+
+async function fetchCryptoUsdFromCryptoCompare(coinId, intervalKey) {
+  const ticker = coinId === 'bitcoin' ? 'BTC' : 'ETH';
+  const { days } = getDateRange(intervalKey);
+  const limit = days === 'max' ? 2000 : Math.max(2, Math.min(2000, Math.round(days) + 1));
+  const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${ticker}&tsym=USD&limit=${limit}`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP hiba (${coinId}/CryptoCompare): ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const rows = payload?.Data?.Data || [];
+  const labels = rows.map((row) => new Date(Number(row.time) * 1000).toISOString().slice(0, 10));
+  const values = rows.map((row) => Number(row.close));
+
+  if (!labels.length) {
+    throw new Error(`Nem érkezett ${coinId}/USD árfolyam adat (CryptoCompare).`);
+  }
+
+  return { labels, values };
+}
+
+async function fetchCryptoUsd(coinId, intervalKey) {
+  try {
+    return await fetchCryptoUsdFromBinance(coinId, intervalKey);
+  } catch (binanceError) {
+    console.warn(binanceError);
+    return fetchCryptoUsdFromCryptoCompare(coinId, intervalKey);
+  }
 }
 
 function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel, color, yAxisLabel) {
