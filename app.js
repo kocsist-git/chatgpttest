@@ -190,15 +190,30 @@ function initBullionVaultGoldChart() {
     return;
   }
 
-  window.BullionVaultChart({
-    bvwidget: widgetContainerId,
-    bvtype: 'large',
-    bvcurrency: 'HUF',
-    bvmetal: 'gold',
-    bvtimezone: 'Europe/Budapest',
-    bvlang: 'hu-HU',
-    bvcharttype: 'line',
-  });
+  try {
+    const options = {
+      bullion: 'gold',
+      currency: 'HUF',
+      timeframe: '1m',
+      chartType: 'line',
+      miniChartModeAxis: 'oz',
+      containerDefinedSize: true,
+      miniChartMode: false,
+      displayLatestPriceLine: true,
+      switchBullion: false,
+      switchCurrency: false,
+      switchTimeframe: true,
+      switchChartType: true,
+      exportButton: true,
+    };
+
+    new window.BullionVaultChart(options, widgetContainerId);
+  } catch (error) {
+    console.error(error);
+    if (fallbackEl) {
+      fallbackEl.hidden = false;
+    }
+  }
 }
 
 activeIntervalKey = DEFAULT_INTERVAL_KEY;
