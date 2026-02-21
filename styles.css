@@ -98,6 +98,8 @@ h2 {
   border: 1px solid #e9edf5;
   border-radius: 12px;
   padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-wrapper {
@@ -105,6 +107,15 @@ h2 {
   border-radius: 12px;
   padding: 0.75rem;
   background: #fff;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  box-sizing: border-box;
+}
+
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 
 #refresh-btn {

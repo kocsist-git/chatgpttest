@@ -87,7 +87,7 @@ function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       scales: {
         y: {
           title: {
