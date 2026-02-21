@@ -14,6 +14,8 @@ const INTERVALS = {
 const statusEl = document.getElementById('status');
 const latestEurRateEl = document.getElementById('latest-eur-rate');
 const latestUsdRateEl = document.getElementById('latest-usd-rate');
+const latestBtcRateEl = document.getElementById('latest-btc-rate');
+const latestEthRateEl = document.getElementById('latest-eth-rate');
 const lastUpdatedEl = document.getElementById('last-updated');
 const intervalLinksEl = document.getElementById('interval-links');
 const eurChartCanvas = document.getElementById('eurHufChart');
@@ -153,61 +155,90 @@ async function updateRates() {
   statusEl.textContent = `Frissítés folyamatban (${label})…`;
   setControlsDisabled(true);
 
+  const [eurRes, usdRes, btcRes, ethRes] = await Promise.allSettled([
+    fetchRates('EUR', activeIntervalKey),
+    fetchRates('USD', activeIntervalKey),
+    fetchCryptoUsd('bitcoin', activeIntervalKey),
+    fetchCryptoUsd('ethereum', activeIntervalKey),
+  ]);
+
+  let fxOk = false;
+  let cryptoErrors = 0;
+
   try {
-    const [eurData, usdData, btcData, ethData] = await Promise.all([
-      fetchRates('EUR', activeIntervalKey),
-      fetchRates('USD', activeIntervalKey),
-      fetchCryptoUsd('bitcoin', activeIntervalKey),
-      fetchCryptoUsd('ethereum', activeIntervalKey),
-    ]);
+    if (eurRes.status === 'fulfilled') {
+      const eurData = eurRes.value;
+      eurChart = createOrUpdateChart(
+        eurChart,
+        eurChartCanvas,
+        eurData.labels,
+        eurData.values,
+        `1 EUR értéke HUF-ban (${label})`,
+        '#1d4ed8',
+        'HUF'
+      );
+      latestEurRateEl.textContent = `${eurData.values[eurData.values.length - 1].toFixed(2)} HUF`;
+      fxOk = true;
+    }
 
-    eurChart = createOrUpdateChart(
-      eurChart,
-      eurChartCanvas,
-      eurData.labels,
-      eurData.values,
-      `1 EUR értéke HUF-ban (${label})`,
-      '#1d4ed8',
-      'HUF'
-    );
+    if (usdRes.status === 'fulfilled') {
+      const usdData = usdRes.value;
+      usdChart = createOrUpdateChart(
+        usdChart,
+        usdChartCanvas,
+        usdData.labels,
+        usdData.values,
+        `1 USD értéke HUF-ban (${label})`,
+        '#059669',
+        'HUF'
+      );
+      latestUsdRateEl.textContent = `${usdData.values[usdData.values.length - 1].toFixed(2)} HUF`;
+      fxOk = true;
+    }
 
-    usdChart = createOrUpdateChart(
-      usdChart,
-      usdChartCanvas,
-      usdData.labels,
-      usdData.values,
-      `1 USD értéke HUF-ban (${label})`,
-      '#059669',
-      'HUF'
-    );
+    if (btcRes.status === 'fulfilled') {
+      const btcData = btcRes.value;
+      btcChart = createOrUpdateChart(
+        btcChart,
+        btcChartCanvas,
+        btcData.labels,
+        btcData.values,
+        `Bitcoin / USD (${label})`,
+        '#f59e0b',
+        'USD'
+      );
+      latestBtcRateEl.textContent = `${btcData.values[btcData.values.length - 1].toLocaleString('hu-HU', { maximumFractionDigits: 2 })} USD`;
+    } else {
+      cryptoErrors += 1;
+    }
 
-    btcChart = createOrUpdateChart(
-      btcChart,
-      btcChartCanvas,
-      btcData.labels,
-      btcData.values,
-      `Bitcoin / USD (${label})`,
-      '#f59e0b',
-      'USD'
-    );
+    if (ethRes.status === 'fulfilled') {
+      const ethData = ethRes.value;
+      ethChart = createOrUpdateChart(
+        ethChart,
+        ethChartCanvas,
+        ethData.labels,
+        ethData.values,
+        `Ethereum / USD (${label})`,
+        '#7c3aed',
+        'USD'
+      );
+      latestEthRateEl.textContent = `${ethData.values[ethData.values.length - 1].toLocaleString('hu-HU', { maximumFractionDigits: 2 })} USD`;
+    } else {
+      cryptoErrors += 1;
+    }
 
-    ethChart = createOrUpdateChart(
-      ethChart,
-      ethChartCanvas,
-      ethData.labels,
-      ethData.values,
-      `Ethereum / USD (${label})`,
-      '#7c3aed',
-      'USD'
-    );
+    if (fxOk) {
+      lastUpdatedEl.textContent = `${new Date().toLocaleString('hu-HU')}`;
+    }
 
-    latestEurRateEl.textContent = `${eurData.values[eurData.values.length - 1].toFixed(2)} HUF`;
-    latestUsdRateEl.textContent = `${usdData.values[usdData.values.length - 1].toFixed(2)} HUF`;
-    lastUpdatedEl.textContent = `${new Date().toLocaleString('hu-HU')}`;
-    statusEl.textContent = '';
-  } catch (error) {
-    console.error(error);
-    statusEl.textContent = `Hiba történt: ${error.message}`;
+    if (!fxOk) {
+      statusEl.textContent = 'Hiba történt: a devizaárfolyam adatok nem tölthetők be.';
+    } else if (cryptoErrors > 0) {
+      statusEl.textContent = 'A kripto árfolyamok átmenetileg nem frissültek, de az intervallumváltás működik.';
+    } else {
+      statusEl.textContent = '';
+    }
   } finally {
     setControlsDisabled(false);
   }
