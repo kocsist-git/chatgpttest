@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EUR/HUF és USD/HUF árfolyam grafikon</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.bullionvault.com/chart/bullionvaultchart.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Euro / Forint és Dollár / Forint árfolyam</h1>
+      <p class="subtitle">Automatikus frissítés a Frankfurter API alapján.</p>
+
+      <section class="stats" aria-live="polite">
+        <div>
+          <span class="label">Legutóbbi EUR/HUF</span>
+          <strong id="latest-eur-rate">–</strong>
+        </div>
+        <div>
+          <span class="label">Legutóbbi USD/HUF</span>
+          <strong id="latest-usd-rate">–</strong>
+        </div>
+        <div>
+          <span class="label">Utolsó frissítés</span>
+          <strong id="last-updated">–</strong>
+        </div>
+      </section>
+
+      <div class="controls" aria-label="Időintervallum választó">
+        <span class="controls-label">Időintervallum:</span>
+        <div class="interval-links" id="interval-links">
+          <button type="button" class="interval-link active" data-interval="1d">1 nap</button>
+          <button type="button" class="interval-link" data-interval="5d">5 nap</button>
+          <button type="button" class="interval-link" data-interval="1m">1 hónap</button>
+          <button type="button" class="interval-link" data-interval="6m">6 hónap</button>
+          <button type="button" class="interval-link" data-interval="1y">1 év</button>
+          <button type="button" class="interval-link" data-interval="5y">5 év</button>
+          <button type="button" class="interval-link" data-interval="max">Max</button>
+        </div>
+      </div>
+
+      <p id="status" class="status">Adatok betöltése…</p>
+
+      <section class="charts-grid">
+        <article class="chart-panel">
+          <h2>EUR/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="eurHufChart" aria-label="EUR/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
+
+        <article class="chart-panel">
+          <h2>USD/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="usdHufChart" aria-label="USD/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="gold-chart-section">
+        <article class="chart-panel gold-panel">
+          <h2>Arany árfolyam (BullionVault)</h2>
+          <div class="gold-widget-wrapper" id="bullionvault-gold-widget"></div>
+          <p id="gold-widget-fallback" class="gold-widget-fallback" hidden>
+            Az arany grafikon jelenleg nem tölthető be ebben a környezetben.
+          </p>
+        </article>
+      </section>
+
+
+      <section class="crypto-chart-section">
+        <div class="crypto-grid">
+          <article class="chart-panel">
+            <h2>Bitcoin / USD</h2>
+            <div class="chart-wrapper">
+              <canvas id="btcUsdChart" aria-label="Bitcoin / USD árfolyam grafikon" role="img"></canvas>
+            </div>
+          </article>
+
+          <article class="chart-panel">
+            <h2>Ethereum / USD</h2>
+            <div class="chart-wrapper">
+              <canvas id="ethUsdChart" aria-label="Ethereum / USD árfolyam grafikon" role="img"></canvas>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
