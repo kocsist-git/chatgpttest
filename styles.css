@@ -164,6 +164,18 @@ h2 {
   color: #b91c1c;
 }
 
+
+.crypto-chart-section {
+  margin-top: 1rem;
+  padding: 0.5rem;
+}
+
+.crypto-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 @media (max-width: 980px) {
   .stats {
     grid-template-columns: 1fr;
@@ -175,5 +187,9 @@ h2 {
 
   .gold-widget-wrapper {
     min-height: 360px;
+  }
+
+  .crypto-grid {
+    grid-template-columns: 1fr;
   }
 }

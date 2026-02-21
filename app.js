@@ -18,9 +18,13 @@ const lastUpdatedEl = document.getElementById('last-updated');
 const intervalLinksEl = document.getElementById('interval-links');
 const eurChartCanvas = document.getElementById('eurHufChart');
 const usdChartCanvas = document.getElementById('usdHufChart');
+const btcChartCanvas = document.getElementById('btcUsdChart');
+const ethChartCanvas = document.getElementById('ethUsdChart');
 
 let eurChart;
 let usdChart;
+let btcChart;
+let ethChart;
 let activeIntervalKey = DEFAULT_INTERVAL_KEY;
 
 function formatDate(date) {
@@ -46,7 +50,7 @@ function getDateRange(intervalKey) {
   const endDate = new Date();
 
   if (interval.start) {
-    return { start: interval.start, end: formatDate(endDate), label: interval.label };
+    return { start: interval.start, end: formatDate(endDate), label: interval.label, days: 'max' };
   }
 
   const startDate = new Date(endDate);
@@ -56,6 +60,7 @@ function getDateRange(intervalKey) {
     start: formatDate(startDate),
     end: formatDate(endDate),
     label: interval.label,
+    days: interval.days,
   };
 }
 
@@ -79,7 +84,29 @@ async function fetchRates(base, intervalKey) {
   return { labels, values };
 }
 
-function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel, color) {
+async function fetchCryptoUsd(coinId, intervalKey) {
+  const { days } = getDateRange(intervalKey);
+  const daysParam = days === 'max' ? 'max' : Math.max(1, Math.round(days));
+  const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${daysParam}&interval=daily`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP hiba (${coinId}): ${response.status}`);
+  }
+
+  const data = await response.json();
+  const prices = data.prices || [];
+  const labels = prices.map((row) => new Date(row[0]).toISOString().slice(0, 10));
+  const values = prices.map((row) => row[1]);
+
+  if (!labels.length) {
+    throw new Error(`Nem érkezett ${coinId}/USD árfolyam adat.`);
+  }
+
+  return { labels, values };
+}
+
+function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel, color, yAxisLabel) {
   if (existingChart) {
     existingChart.destroy();
   }
@@ -107,7 +134,7 @@ function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel
         y: {
           title: {
             display: true,
-            text: 'HUF',
+            text: yAxisLabel,
           },
         },
       },
@@ -127,9 +154,11 @@ async function updateRates() {
   setControlsDisabled(true);
 
   try {
-    const [eurData, usdData] = await Promise.all([
+    const [eurData, usdData, btcData, ethData] = await Promise.all([
       fetchRates('EUR', activeIntervalKey),
       fetchRates('USD', activeIntervalKey),
+      fetchCryptoUsd('bitcoin', activeIntervalKey),
+      fetchCryptoUsd('ethereum', activeIntervalKey),
     ]);
 
     eurChart = createOrUpdateChart(
@@ -138,7 +167,8 @@ async function updateRates() {
       eurData.labels,
       eurData.values,
       `1 EUR értéke HUF-ban (${label})`,
-      '#1d4ed8'
+      '#1d4ed8',
+      'HUF'
     );
 
     usdChart = createOrUpdateChart(
@@ -147,7 +177,28 @@ async function updateRates() {
       usdData.labels,
       usdData.values,
       `1 USD értéke HUF-ban (${label})`,
-      '#059669'
+      '#059669',
+      'HUF'
+    );
+
+    btcChart = createOrUpdateChart(
+      btcChart,
+      btcChartCanvas,
+      btcData.labels,
+      btcData.values,
+      `Bitcoin / USD (${label})`,
+      '#f59e0b',
+      'USD'
+    );
+
+    ethChart = createOrUpdateChart(
+      ethChart,
+      ethChartCanvas,
+      ethData.labels,
+      ethData.values,
+      `Ethereum / USD (${label})`,
+      '#7c3aed',
+      'USD'
     );
 
     latestEurRateEl.textContent = `${eurData.values[eurData.values.length - 1].toFixed(2)} HUF`;
@@ -177,7 +228,6 @@ intervalLinksEl.addEventListener('click', (event) => {
   setActiveIntervalUI(activeIntervalKey);
   updateRates();
 });
-
 
 function initBullionVaultGoldChart() {
   const widgetContainerId = 'bullionvault-gold-widget';
