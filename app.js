@@ -11,13 +11,16 @@ const INTERVALS = {
 };
 
 const statusEl = document.getElementById('status');
-const latestRateEl = document.getElementById('latest-rate');
+const latestEurRateEl = document.getElementById('latest-eur-rate');
+const latestUsdRateEl = document.getElementById('latest-usd-rate');
 const lastUpdatedEl = document.getElementById('last-updated');
 const refreshBtn = document.getElementById('refresh-btn');
 const intervalSelectEl = document.getElementById('interval-select');
-const chartCanvas = document.getElementById('eurHufChart');
+const eurChartCanvas = document.getElementById('eurHufChart');
+const usdChartCanvas = document.getElementById('usdHufChart');
 
-let chart;
+let eurChart;
+let usdChart;
 
 function formatDate(date) {
   return date.toISOString().slice(0, 10);
@@ -41,13 +44,13 @@ function getDateRange(intervalKey) {
   };
 }
 
-async function fetchEurHufRates(intervalKey) {
+async function fetchRates(base, intervalKey) {
   const { start, end } = getDateRange(intervalKey);
-  const url = `https://api.frankfurter.app/${start}..${end}?from=EUR&to=HUF`;
+  const url = `https://api.frankfurter.app/${start}..${end}?from=${base}&to=HUF`;
 
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`HTTP hiba: ${response.status}`);
+    throw new Error(`HTTP hiba (${base}): ${response.status}`);
   }
 
   const data = await response.json();
@@ -55,27 +58,27 @@ async function fetchEurHufRates(intervalKey) {
   const values = labels.map((date) => data.rates[date].HUF);
 
   if (!labels.length) {
-    throw new Error('Nem érkezett árfolyam adat.');
+    throw new Error(`Nem érkezett ${base}/HUF árfolyam adat.`);
   }
 
   return { labels, values };
 }
 
-function renderChart(labels, values, intervalLabel) {
-  if (chart) {
-    chart.destroy();
+function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel, color) {
+  if (existingChart) {
+    existingChart.destroy();
   }
 
-  chart = new Chart(chartCanvas, {
+  return new Chart(canvas, {
     type: 'line',
     data: {
       labels,
       datasets: [
         {
-          label: `1 EUR értéke HUF-ban (${intervalLabel})`,
+          label: datasetLabel,
           data: values,
-          borderColor: '#1d4ed8',
-          backgroundColor: 'rgba(29, 78, 216, 0.2)',
+          borderColor: color,
+          backgroundColor: `${color}33`,
           fill: true,
           tension: 0.25,
           pointRadius: 2,
@@ -111,14 +114,32 @@ async function updateRates() {
   intervalSelectEl.disabled = true;
 
   try {
-    const { labels, values } = await fetchEurHufRates(intervalKey);
-    renderChart(labels, values, label);
+    const [eurData, usdData] = await Promise.all([
+      fetchRates('EUR', intervalKey),
+      fetchRates('USD', intervalKey),
+    ]);
 
-    const latestRate = values[values.length - 1];
-    const latestDate = labels[labels.length - 1];
+    eurChart = createOrUpdateChart(
+      eurChart,
+      eurChartCanvas,
+      eurData.labels,
+      eurData.values,
+      `1 EUR értéke HUF-ban (${label})`,
+      '#1d4ed8'
+    );
 
-    latestRateEl.textContent = `${latestRate.toFixed(2)} HUF`;
-    lastUpdatedEl.textContent = `${latestDate} (${new Date().toLocaleTimeString('hu-HU')})`;
+    usdChart = createOrUpdateChart(
+      usdChart,
+      usdChartCanvas,
+      usdData.labels,
+      usdData.values,
+      `1 USD értéke HUF-ban (${label})`,
+      '#059669'
+    );
+
+    latestEurRateEl.textContent = `${eurData.values[eurData.values.length - 1].toFixed(2)} HUF`;
+    latestUsdRateEl.textContent = `${usdData.values[usdData.values.length - 1].toFixed(2)} HUF`;
+    lastUpdatedEl.textContent = `${new Date().toLocaleString('hu-HU')}`;
     statusEl.textContent = `Sikeres frissítés (${label}).`;
   } catch (error) {
     console.error(error);
