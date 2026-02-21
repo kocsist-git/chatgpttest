@@ -1,4 +1,5 @@
 const AUTO_REFRESH_MS = 60 * 60 * 1000;
+const DEFAULT_INTERVAL_KEY = '1m';
 
 const INTERVALS = {
   '1d': { label: '1 nap', days: 1 },
@@ -14,20 +15,34 @@ const statusEl = document.getElementById('status');
 const latestEurRateEl = document.getElementById('latest-eur-rate');
 const latestUsdRateEl = document.getElementById('latest-usd-rate');
 const lastUpdatedEl = document.getElementById('last-updated');
-const refreshBtn = document.getElementById('refresh-btn');
-const intervalSelectEl = document.getElementById('interval-select');
+const intervalLinksEl = document.getElementById('interval-links');
 const eurChartCanvas = document.getElementById('eurHufChart');
 const usdChartCanvas = document.getElementById('usdHufChart');
 
 let eurChart;
 let usdChart;
+let activeIntervalKey = DEFAULT_INTERVAL_KEY;
 
 function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
+function setActiveIntervalUI(intervalKey) {
+  const buttons = intervalLinksEl.querySelectorAll('.interval-link');
+  buttons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.interval === intervalKey);
+  });
+}
+
+function setControlsDisabled(isDisabled) {
+  const buttons = intervalLinksEl.querySelectorAll('.interval-link');
+  buttons.forEach((button) => {
+    button.disabled = isDisabled;
+  });
+}
+
 function getDateRange(intervalKey) {
-  const interval = INTERVALS[intervalKey] || INTERVALS['1m'];
+  const interval = INTERVALS[intervalKey] || INTERVALS[DEFAULT_INTERVAL_KEY];
   const endDate = new Date();
 
   if (interval.start) {
@@ -98,7 +113,7 @@ function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel
       },
       plugins: {
         legend: {
-          display: true,
+          display: false,
         },
       },
     },
@@ -106,17 +121,15 @@ function createOrUpdateChart(existingChart, canvas, labels, values, datasetLabel
 }
 
 async function updateRates() {
-  const intervalKey = intervalSelectEl.value;
-  const { label } = getDateRange(intervalKey);
+  const { label } = getDateRange(activeIntervalKey);
 
   statusEl.textContent = `Frissítés folyamatban (${label})…`;
-  refreshBtn.disabled = true;
-  intervalSelectEl.disabled = true;
+  setControlsDisabled(true);
 
   try {
     const [eurData, usdData] = await Promise.all([
-      fetchRates('EUR', intervalKey),
-      fetchRates('USD', intervalKey),
+      fetchRates('EUR', activeIntervalKey),
+      fetchRates('USD', activeIntervalKey),
     ]);
 
     eurChart = createOrUpdateChart(
@@ -140,18 +153,32 @@ async function updateRates() {
     latestEurRateEl.textContent = `${eurData.values[eurData.values.length - 1].toFixed(2)} HUF`;
     latestUsdRateEl.textContent = `${usdData.values[usdData.values.length - 1].toFixed(2)} HUF`;
     lastUpdatedEl.textContent = `${new Date().toLocaleString('hu-HU')}`;
-    statusEl.textContent = `Sikeres frissítés (${label}).`;
+    statusEl.textContent = '';
   } catch (error) {
     console.error(error);
     statusEl.textContent = `Hiba történt: ${error.message}`;
   } finally {
-    refreshBtn.disabled = false;
-    intervalSelectEl.disabled = false;
+    setControlsDisabled(false);
   }
 }
 
-refreshBtn.addEventListener('click', updateRates);
-intervalSelectEl.addEventListener('change', updateRates);
+intervalLinksEl.addEventListener('click', (event) => {
+  const target = event.target.closest('.interval-link');
+  if (!target) {
+    return;
+  }
 
+  const intervalKey = target.dataset.interval;
+  if (!INTERVALS[intervalKey] || intervalKey === activeIntervalKey) {
+    return;
+  }
+
+  activeIntervalKey = intervalKey;
+  setActiveIntervalUI(activeIntervalKey);
+  updateRates();
+});
+
+activeIntervalKey = DEFAULT_INTERVAL_KEY;
+setActiveIntervalUI(activeIntervalKey);
 updateRates();
 setInterval(updateRates, AUTO_REFRESH_MS);

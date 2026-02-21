@@ -27,17 +27,17 @@
         </div>
       </section>
 
-      <div class="controls">
-        <label for="interval-select">Időintervallum</label>
-        <select id="interval-select" name="interval">
-          <option value="1d">1 nap</option>
-          <option value="5d">5 nap</option>
-          <option value="1m" selected>1 hónap</option>
-          <option value="6m">6 hónap</option>
-          <option value="1y">1 év</option>
-          <option value="5y">5 év</option>
-          <option value="max">Max</option>
-        </select>
+      <div class="controls" aria-label="Időintervallum választó">
+        <span class="controls-label">Időintervallum:</span>
+        <div class="interval-links" id="interval-links">
+          <button type="button" class="interval-link active" data-interval="1d">1 nap</button>
+          <button type="button" class="interval-link" data-interval="5d">5 nap</button>
+          <button type="button" class="interval-link" data-interval="1m">1 hónap</button>
+          <button type="button" class="interval-link" data-interval="6m">6 hónap</button>
+          <button type="button" class="interval-link" data-interval="1y">1 év</button>
+          <button type="button" class="interval-link" data-interval="5y">5 év</button>
+          <button type="button" class="interval-link" data-interval="max">Max</button>
+        </div>
       </div>
 
       <p id="status" class="status">Adatok betöltése…</p>
@@ -57,8 +57,6 @@
           </div>
         </article>
       </section>
-
-      <button id="refresh-btn" type="button">Frissítés most</button>
     </main>
 
     <script src="app.js"></script>
