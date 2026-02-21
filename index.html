@@ -6,6 +6,7 @@
     <title>EUR/HUF és USD/HUF árfolyam grafikon</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://gold.bullionvault.com/chart/bullionvaultchart.js"></script>
   </head>
   <body>
     <main class="container">
@@ -55,6 +56,16 @@
           <div class="chart-wrapper">
             <canvas id="usdHufChart" aria-label="USD/HUF árfolyam grafikon" role="img"></canvas>
           </div>
+        </article>
+      </section>
+
+      <section class="gold-chart-section">
+        <article class="chart-panel gold-panel">
+          <h2>Arany árfolyam (BullionVault)</h2>
+          <div class="gold-widget-wrapper" id="bullionvault-gold-widget"></div>
+          <p id="gold-widget-fallback" class="gold-widget-fallback" hidden>
+            Az arany grafikon jelenleg nem tölthető be ebben a környezetben.
+          </p>
         </article>
       </section>
     </main>

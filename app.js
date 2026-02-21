@@ -178,7 +178,32 @@ intervalLinksEl.addEventListener('click', (event) => {
   updateRates();
 });
 
+
+function initBullionVaultGoldChart() {
+  const widgetContainerId = 'bullionvault-gold-widget';
+  const fallbackEl = document.getElementById('gold-widget-fallback');
+
+  if (typeof window.BullionVaultChart !== 'function') {
+    if (fallbackEl) {
+      fallbackEl.hidden = false;
+    }
+    return;
+  }
+
+  window.BullionVaultChart({
+    bvwidget: widgetContainerId,
+    bvtype: 'large',
+    bvcurrency: 'HUF',
+    bvmetal: 'gold',
+    bvtimezone: 'Europe/Budapest',
+    bvlang: 'hu-HU',
+    bvcharttype: 'line',
+  });
+}
+
 activeIntervalKey = DEFAULT_INTERVAL_KEY;
 setActiveIntervalUI(activeIntervalKey);
 updateRates();
 setInterval(updateRates, AUTO_REFRESH_MS);
+
+initBullionVaultGoldChart();
