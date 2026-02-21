@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EUR/HUF és USD/HUF árfolyam grafikon</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Euro / Forint és Dollár / Forint árfolyam</h1>
+      <p class="subtitle">Automatikus frissítés a Frankfurter API alapján.</p>
+
+      <section class="stats" aria-live="polite">
+        <div>
+          <span class="label">Legutóbbi EUR/HUF</span>
+          <strong id="latest-eur-rate">–</strong>
+        </div>
+        <div>
+          <span class="label">Legutóbbi USD/HUF</span>
+          <strong id="latest-usd-rate">–</strong>
+        </div>
+        <div>
+          <span class="label">Utolsó frissítés</span>
+          <strong id="last-updated">–</strong>
+        </div>
+      </section>
+
+      <div class="controls">
+        <label for="interval-select">Időintervallum</label>
+        <select id="interval-select" name="interval">
+          <option value="1d">1 nap</option>
+          <option value="5d">5 nap</option>
+          <option value="1m" selected>1 hónap</option>
+          <option value="6m">6 hónap</option>
+          <option value="1y">1 év</option>
+          <option value="5y">5 év</option>
+          <option value="max">Max</option>
+        </select>
+      </div>
+
+      <p id="status" class="status">Adatok betöltése…</p>
+
+      <section class="charts-grid">
+        <article class="chart-panel">
+          <h2>EUR/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="eurHufChart" aria-label="EUR/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
+
+        <article class="chart-panel">
+          <h2>USD/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="usdHufChart" aria-label="USD/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <button id="refresh-btn" type="button">Frissítés most</button>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
