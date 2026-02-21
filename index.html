@@ -42,15 +42,21 @@
 
       <p id="status" class="status">Adatok betöltése…</p>
 
-      <h2>EUR/HUF</h2>
-      <div class="chart-wrapper">
-        <canvas id="eurHufChart" aria-label="EUR/HUF árfolyam grafikon" role="img"></canvas>
-      </div>
+      <section class="charts-grid">
+        <article class="chart-panel">
+          <h2>EUR/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="eurHufChart" aria-label="EUR/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
 
-      <h2>USD/HUF</h2>
-      <div class="chart-wrapper">
-        <canvas id="usdHufChart" aria-label="USD/HUF árfolyam grafikon" role="img"></canvas>
-      </div>
+        <article class="chart-panel">
+          <h2>USD/HUF</h2>
+          <div class="chart-wrapper">
+            <canvas id="usdHufChart" aria-label="USD/HUF árfolyam grafikon" role="img"></canvas>
+          </div>
+        </article>
+      </section>
 
       <button id="refresh-btn" type="button">Frissítés most</button>
     </main>
